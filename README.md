@@ -1,143 +1,191 @@
 # 1c-gui-test-kit
 
-GUI-тесты для 1С:Предприятие 8.3, которые «кликают» в живой базе так же,
-как пользователь: открывают формы, заполняют поля, присоединяют файлы,
-проводят документы и **проверяют результат** — а не только факт, что форма
-открылась.
+[![MIT](https://img.shields.io/badge/license-MIT-2E7D32)](LICENSE)
+[![1С:Предприятие 8.3](https://img.shields.io/badge/1С-Предприятие%208.3-E53935)](#)
+[![Playwright](https://img.shields.io/badge/Playwright-web--client-2EAD33?logo=playwright&logoColor=white)](skills/web-test/SKILL.md)
+[![Allure](https://img.shields.io/badge/отчет-Allure%203-FF8C00)](docs/regression.md)
 
-Два режима на выбор:
+GUI-тесты для 1С:Предприятие 8.3, которые работают в живой базе как
+пользователь: открывают формы, заполняют поля, присоединяют файлы, проводят
+документы и **проверяют результат**, а не только то, что форма открылась.
+Тесты собираются в регрессионный набор на базу и гоняются одной командой
+после каждой загрузки изменений, с отчетом Allure.
+
+```
+доработка → загрузка + обновление БД → регресс → отчет → разбор падений
+```
 
 | | Веб-клиент | Толстый / тонкий клиент |
 |---|---|---|
 | Движок | Playwright + Chromium (навык `web-test`) | Windows UI Automation (навык `1c-client-test`) |
-| Сценарий | JavaScript | JSON-список действий |
+| Тест | `*.test.mjs`: шаги, проверки, теги | JSON-список действий |
 | Что видит тест | поля с именами и значениями, строки таблиц, HTML-поля | дерево элементов окна, снимки окон |
+| Отчет | Allure (HTML одним файлом) / JSON / JUnit, скриншот и видео падения | сводка по сценариям, снимки, дерево UI |
 | Нужно | веб-публикация базы, Node.js 18+ | только платформа 1С |
 
-Есть публикация — тестируйте вебом: проверки там точнее (значения полей,
-содержимое таблиц, отрисованные картинки). Толстый клиент — для баз без
-публикации и того, что в браузере не воспроизводится.
+Есть публикация — тестируйте вебом: проверки там точнее. Толстый клиент —
+для баз без публикации и того, что в браузере не воспроизводится.
 
 ## Как это выглядит
 
-Сценарий [`post-with-image.js`](scenarios/examples/web/post-with-image.js):
-создает документ, пишет текст в HTML-редакторе, присоединяет картинку через
-диалог 1С «Выбор файла», проверяет, что в предпросмотре есть заголовок,
-текст и **реально отрисованная** картинка, проводит документ, находит его в
-списке и убирает за собой.
+Прогон набора базы:
+
+```
+PS> .\gui-test.ps1 -Base Demo -Regress -Allure -OpenReport
+[gui-test] Регресс базы Demo (http://localhost/demo/): ...\tests\Demo
+
+web-test -- http://localhost/demo/
+Running 2 tests from tests/Demo/
+
+[hooks] публикация отвечает: http://localhost/demo/
+  ✓ Открытие базы (0.9s)
+  ✓ Уведомление-пост с картинкой: создание, предпросмотр, проведение (64.8s)
+
+2 passed, 0 failed, 0 skipped (1m 5.7s)
+
+[gui-test] Отчет Allure: ...\artifacts\Demo-20260919-042240\allure-report\index.html
+[OK] Регресс пройден.
+```
+
+Отчет Allure — один HTML-файл, открывается двойным кликом, на русском:
+
+![Отчет Allure: сводка прогона и сведения о стенде](docs/img/allure-overview.png)
+
+Тест по шагам — видно, где именно проверяется результат:
+
+![Шаги теста в отчете](docs/img/allure-test-steps.png)
+
+Падение — шаг, сообщение (для ненайденной кнопки — со списком кнопок,
+которые есть на форме), скриншот момента ошибки и категория:
+
+![Упавший тест в отчете](docs/img/allure-failure.png)
+
+Сам тест [пример](examples/web-test/01-пост-с-картинкой.test.mjs) —
+в живой базе:
 
 ![Форма документа: текст в редакторе, присоединенная обложка, предпросмотр](docs/img/web-post-form.png)
-
-```
-PS> .\gui-test.ps1 -Base Demo -Web -ScriptPath scenarios\examples\web\post-with-image.js
-[gui-test] База Demo, веб-клиент http://localhost/demo/, сценарий ...\post-with-image.js
---- вывод сценария ---
-OK: текст введен
-OK: картинка присоединена -> post-cover
-OK: предпросмотр с текстом и картинкой 800x400
-OK: документ в списке
-OK: тестовый документ помечен на удаление
-ИТОГ: сценарий пройден
-[OK] Веб-сценарий прошел. Артефакты: ...\artifacts\Demo-20260919-025411
-```
-
-![Проверка в списке: отбор по заголовку, найден ровно созданный документ](docs/img/web-post-list.png)
-
-Толстый клиент, набор сценариев папки со сводкой:
-
-```
-PS> .\gui-test.ps1 -Base Buh -Suite scenarios\examples\thick -URL "e1cib/list/Справочник.Банки"
-[READY] PID 24692: Бухгалтерия для Казахстана, редакция 3.0
-[PASS] 01-assertNoWindow
-[PASS] 02-dismissWindow
-[PASS] 03-assertElement
-[PASS] 04-assertElement
-[PASS] 05-screenshot
-[PASS] 06-dumpUi
-
-Scenario                Итог Seconds
---------                ---- -------
-catalog-list-smoke.json OK       132
-
-Пройдено 1 из 1.
-```
-
-![Снимок толстого клиента из артефактов прогона](docs/img/thick-list.png)
 
 ## Быстрый старт
 
 ```powershell
 git clone https://github.com/qazdefense/1c-gui-test-kit
 cd 1c-gui-test-kit
-.\setup.ps1                                   # Playwright + Chromium (только для веб-режима)
+.\setup.ps1                                          # Playwright + Chromium (для веба)
 
-copy bases\example-server-web.psd1 bases\Demo.psd1   # и поправить: сервер/путь, платформа, пользователь, WebUrl
-.\gui-test.ps1 -List                          # база видна, какие режимы доступны
+copy bases\example-server-web.psd1 bases\Demo.psd1   # поправить: сервер/путь, платформа, пользователь, WebUrl
+.\gui-test.ps1 -List                                 # база видна, режимы, сколько тестов в наборе
 
-.\gui-test.ps1 -Base Demo -Web -ScriptPath scenarios\examples\web\post-with-image.js
-.\gui-test.ps1 -Base Demo -ScenarioPath scenarios\examples\thick\catalog-list-smoke.json -URL "e1cib/list/Справочник.Банки"
+.\gui-test.ps1 -Base Demo -Regress -Allure -OpenReport   # набор tests\Demo (дымовой тест уже есть)
 ```
 
-Профиль базы (`bases\<Имя>.psd1`) хранит платформу, путь или сервер ИБ,
-пользователя и URL публикации — в сценариях этих данных нет. Профили с
-паролями в `.gitignore`, в репозитории только `example-*`. Папку профилей
-можно держать в другом месте: `-BasesDir` или переменная `GUI_TEST_BASES_DIR`.
+Своя база `Buh`:
+
+```powershell
+copy bases\example-file.psd1 bases\Buh.psd1         # и поправить
+.\gui-test.ps1 -Base Buh -Init                       # заготовка набора tests\Buh
+.\gui-test.ps1 -Base Buh -Regress                    # прогон
+```
 
 Требования: Windows, PowerShell 5.1+, **интерактивный разблокированный
-рабочий стол** (оба режима показывают настоящие окна). Для веба — пользователь
-в строке соединения публикации (`Usr=`/`Pwd=` в `default.vrd`) и Node.js 18+.
+рабочий стол** (оба режима показывают настоящие окна). Для веба — Node.js
+18+ и пользователь в строке соединения публикации (`Usr=`/`Pwd=` в
+`default.vrd`): форму входа движок не заполняет. Отчет Allure собирается
+через `npx allure@3` — Java не нужна.
 
-## Сценарий пишется вместе с доработкой
+## Команды
 
-Сделали форму или команду — тут же описали, как ею пользуются, и прогнали
-в живой базе. Зеленый сценарий остается в `scenarios/<база>/` и дальше
-гоняется набором: `.\gui-test.ps1 -Base Demo -Web -Suite scenarios\Demo`.
-Цикл, критерии «что считается тестом», работа с тестовыми данными и
-готовый фрагмент инструкции для ИИ-агентов (Claude Code, Codex, Gemini) —
-[docs/workflow.md](docs/workflow.md).
-
-## Хелперы
-
-В каждый веб-сценарий автоматически подставляется
-[`lib/1c-helpers.js`](lib/1c-helpers.js) — готовые решения для мест, где
-веб-клиент 1С ведет себя неочевидно:
-
-```js
-await uploadFile('Загрузить...', fixture('cover.png'));  // свой диалог 1С, а не браузерный
-const preview = await findFrameWithText(TITLE);          // HTML-поле - отдельный iframe
-await assertImageRendered(preview);                      // картинка отрисована, а не просто есть тег
-if (!(await findListRow(TITLE, 'Заголовок'))) fail('Нет в списке');  // список отдает ~20 строк без отбора
-await markForDeletion(TITLE, 'Заголовок');               // Ctrl+Delete в браузере не работает
+```powershell
+.\gui-test.ps1 -List                                    # базы, публикации, наборы
+.\gui-test.ps1 -Base Demo -Regress                      # весь набор, JSON-отчет + сводка
+.\gui-test.ps1 -Base Demo -Regress -Allure -OpenReport  # отчет Allure
+.\gui-test.ps1 -Regress -TestPath tests\Demo\02-документы   # часть набора; база - из пути
+.\gui-test.ps1 -Base Demo -Regress -Tags smoke -Bail    # по тегу, до первого падения
+.\gui-test.ps1 -Base Demo -Regress -Grep "накладн" -Retry 1 -Record   # по имени, повтор, видео (ffmpeg)
+.\gui-test.ps1 -Base Buh -Init                          # заготовка набора
+.\gui-test.ps1 -Base Buh -Suite                         # JSON-сценарии толстого клиента из tests\Buh
+.\gui-test.ps1 -Base Buh -ScenarioPath x.json -ValidateScenarioOnly   # проверить сценарий без запуска 1С
+.\gui-test.ps1 -Base Demo -Web -ScriptPath recon.js     # разовый сценарий / разведка (не тест)
 ```
 
-Полный список — в [docs/recipes.md](docs/recipes.md).
+## Набор тестов
+
+```
+tests/
+  _lib/                     хелперы, подготовка стенда, конфиг Allure, заготовка набора
+  _fixtures/                файлы для тестов (картинки и т.п.)
+  Demo/                     набор базы Demo (имя = профиль bases\Demo.psd1)
+    webtest.config.mjs      таймауты, скриншоты, severity (URL - из профиля)
+    _hooks.mjs              подготовка стенда: проверка публикации
+    _allure/categories.json классы падений: лицензии, стенд, ошибка 1С, элемент не найден...
+    01-вход/01-открытие-базы.test.mjs
+    02-<функция>/01-<сценарий>.test.mjs
+    03-<функция>/01-<сценарий>.json   сценарий толстого клиента ("url" - в файле)
+```
+
+Тест:
+
+```js
+import { stamp, uploadFile, fixture, findListRow, markForDeletion } from '../../_lib/1c-helpers.mjs';
+
+export const name = 'Документ с картинкой';
+export const tags = ['документы'];
+export const timeout = 120000;
+
+const TITLE = stamp('GUI-тест');                       // уникально на каждый прогон
+
+export default async function(ctx) {
+  const { navigateLink, clickElement, fillFields, assert, step } = ctx;
+  await step('Создать документ', async () => {
+    await navigateLink('Документ.МойДокумент');
+    await clickElement('Создать');
+    await fillFields({ 'Заголовок': TITLE });
+  });
+  await step('Присоединить картинку', async () => {
+    await uploadFile(ctx, 'Загрузить...', fixture('cover.png'));   // свой диалог 1С, а не браузерный
+  });
+  await step('Документ виден в списке', async () => {
+    await clickElement('Записать и закрыть');
+    assert.ok(await findListRow(ctx, TITLE, 'Заголовок'), 'Нет в списке');
+  });
+  await step('Убрать за собой', async () => {
+    await markForDeletion(ctx, TITLE, 'Заголовок');
+  });
+}
+```
+
+Хелперы (`tests/_lib/1c-helpers.mjs`) закрывают места, где веб-клиент 1С
+ведет себя неочевидно: HTML-поля в отдельных iframe, свой диалог выбора
+файла с латинским `OK`, динамический список, который без отбора отдает ~20
+строк, неработающий в браузере Ctrl+Delete. Полный список —
+[docs/recipes.md](docs/recipes.md).
 
 ## Документация
 
-- [docs/workflow.md](docs/workflow.md) — сценарий вместе с доработкой, тестовые данные, инструкция для агентов
+- [docs/workflow.md](docs/workflow.md) — тест пишется вместе с доработкой; тестовые данные; инструкция для ИИ-агентов
+- [docs/regression.md](docs/regression.md) — регрессионный набор: структура, запуск, отчет, разбор падений, грабли процесса
 - [docs/recipes.md](docs/recipes.md) — «как сделать вот это»: картинка, HTML-поля, табличные части, списки, отчеты, модальные окна
-- [docs/gotchas.md](docs/gotchas.md) — грабли платформы, найденные на живых прогонах (латинское `OK` в диалоге, iframe HTML-полей, пагинация списков, `/DisableStartupDialogs` и другие)
-- [skills/web-test/SKILL.md](skills/web-test/SKILL.md) — полный API веб-сценариев
+- [docs/gotchas.md](docs/gotchas.md) — грабли веб-клиента 1С, найденные на живых прогонах
+- [skills/web-test/SKILL.md](skills/web-test/SKILL.md), [skills/web-test/regress.md](skills/web-test/regress.md) — полный API и режим регресса
 - [skills/1c-client-test/references/scenario.md](skills/1c-client-test/references/scenario.md) — формат JSON-сценария толстого клиента
 - [ROADMAP.md](ROADMAP.md) — что планируется
 
 ## Состав
 
 ```
-gui-test.ps1              запуск: база + сценарий, набор (-Suite), артефакты
-setup.ps1                 зависимости веб-режима
-bases/                    профили баз (example-*.psd1 - образцы)
-lib/1c-helpers.js         хелперы веб-сценариев
-scenarios/examples/       примеры: web/*.js, thick/*.json
-scenarios/_fixtures/      файлы для сценариев (картинки и т.п.)
-skills/                   навыки web-test и 1c-client-test (cc-1c-skills, MIT)
-docs/                     workflow, рецепты, грабли
+gui-test.ps1        запуск: регресс, набор толстого клиента, разовые сценарии, заготовка набора
+setup.ps1           зависимости веб-режима
+bases/              профили баз (example-*.psd1 - образцы; свои - в .gitignore)
+tests/              наборы тестов по базам + _lib, _fixtures
+examples/           примеры: web-test/*.test.mjs, thick/*.json, run/*.js (разовый сценарий)
+skills/             навыки web-test и 1c-client-test (cc-1c-skills, MIT)
+docs/               workflow, регресс, рецепты, грабли
 ```
 
 ## Благодарности и лицензия
 
-Движки обоих режимов — навыки из [cc-1c-skills](https://github.com/Nikolay-Shirokov/cc-1c-skills)
-(Nick Shirokov, MIT), в редакции форка [ivanarama/cc-1c-skills](https://github.com/ivanarama/cc-1c-skills).
+Движки обоих режимов, включая регрессионный раннер, — навыки из
+[cc-1c-skills](https://github.com/Nikolay-Shirokov/cc-1c-skills) (Nick
+Shirokov, MIT), в редакции форка [ivanarama/cc-1c-skills](https://github.com/ivanarama/cc-1c-skills).
 Что изменено в них — [NOTICE.md](NOTICE.md).
 
 Набор распространяется по лицензии [MIT](LICENSE).

@@ -1,0 +1,12 @@
+{
+  "_комментарий": "Дымовой тест толстого клиента: форма списка открыта по навигационной ссылке из поля url и живая - есть кнопки Создать/Подбор. dismissWindow снимает всплывающее окно при старте (здесь - 'Ошибка применения расширения'), которое иначе перекрывает форму на снимках; окна нет - шаг просто пропускается. Место в наборе: tests/<База>/NN-<функция>/NN-<сценарий>.json, запуск всех таких сценариев базы - gui-test.ps1 -Base <База> -Suite.",
+  "url": "e1cib/list/Справочник.Банки",
+  "actions": [
+    {"type": "assertNoWindow", "title": "непредвиденная ситуация"},
+    {"type": "dismissWindow", "title": "Ошибка применения расширения", "timeoutSeconds": 5},
+    {"type": "assertElement", "automationName": "Создать", "timeoutSeconds": 30},
+    {"type": "assertElement", "automationName": "Подбор"},
+    {"type": "screenshot", "file": "list.png"},
+    {"type": "dumpUi", "file": "ui-tree.json"}
+  ]
+}

@@ -7,3 +7,6 @@ artifacts/
 
 node_modules/
 skills/web-test/error-shot.png
+
+# пишет gui-test.ps1 перед каждым прогоном
+tests/*/_allure/environment.properties

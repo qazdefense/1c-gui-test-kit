@@ -1,0 +1,20 @@
+[
+  { "name": "Нехватка лицензий 1С",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(Не обнаружено свободной лицензии|context pool exhausted).*" },
+  { "name": "Стенд недоступен",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(не отвечает|ECONNREFUSED|net::ERR_|HTTP 5\\d\\d).*" },
+  { "name": "Ошибка приложения 1С",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*(ВызватьИсключение|В поле введены некорректные данные|Произошла ошибка|Ошибка при вызове).*" },
+  { "name": "Элемент не найден (проверить подпись, в т.ч. латиница/кириллица)",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*(not found|Не найден|не найдена|нет input).*" },
+  { "name": "Превышен лимит времени теста",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*(Timeout \\(\\d+ms\\)|hang).*" },
+  { "name": "Несовпадение ожидания и факта",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*(Expected|AssertionError|ожидал).*" }
+]

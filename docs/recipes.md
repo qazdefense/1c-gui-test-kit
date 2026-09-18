@@ -9,16 +9,25 @@
 
 ## Коротко: хелперы вместо ручного кода
 
-Большая часть приемов ниже уже упакована в [`lib/1c-helpers.js`](../lib/1c-helpers.js) —
-`gui-test.ps1` подставляет его перед каждым веб-сценарием, импорт не нужен.
+Большая часть приемов ниже уже упакована в хелперы, в двух вариантах с
+одинаковыми именами:
+
+- [`tests/_lib/1c-helpers.mjs`](../tests/_lib/1c-helpers.mjs) — для тестов
+  `*.test.mjs`: `import { ... } from '../../_lib/1c-helpers.mjs'`, первым
+  аргументом — `ctx` теста (`uploadFile(ctx, 'Загрузить...', путь)`);
+- [`tests/_lib/1c-helpers.js`](../tests/_lib/1c-helpers.js) — для разовых
+  сценариев `-Web -ScriptPath`: `gui-test.ps1` подставляет его перед
+  сценарием, импорт и `ctx` не нужны (`uploadFile('Загрузить...', путь)`).
+
 Ручной код в разделах ниже оставлен, чтобы было понятно, что происходит
 внутри и как адаптировать прием, если хелпер не подошел.
 
 | Хелпер | Что делает |
 |---|---|
 | `norm(s)` | убирает неразрывные пробелы (U+00A0) — для любых сравнений со значениями из 1С |
-| `fail(msg)` | прерывает сценарий с понятным сообщением |
-| `fixture(name)` | абсолютный путь к файлу из `scenarios/_fixtures` |
+| `stamp(prefix)` | уникальная метка на прогон для тестовых данных (только `.mjs`) |
+| `fail(msg)` | прерывает сценарий с понятным сообщением (только `.js`; в тестах — `assert`) |
+| `fixture(name)` | абсолютный путь к файлу из `tests/_fixtures` |
 | `getField(name)` | значение поля текущей формы |
 | `findFrame(probe)`, `findFrameWithSelector(sel)`, `findFrameWithText(text)` | поиск поля HTML-документа (отдельный iframe) |
 | `uploadFile(command, path)` | присоединить файл через диалог 1С «Выбор файла» |
@@ -27,7 +36,9 @@
 | `findListRow(value, field)` | найти строку динамического списка через отбор (без отбора видно ~20 строк) |
 | `markForDeletion(value, field)` | пометить строку на удаление через «Ещё» и проверить `_deleted` |
 
-Пример целиком на хелперах — [`scenarios/examples/web/post-with-image.js`](../scenarios/examples/web/post-with-image.js).
+Примеры целиком на хелперах: тест —
+[`examples/web-test/01-пост-с-картинкой.test.mjs`](../examples/web-test/01-пост-с-картинкой.test.mjs),
+разовый сценарий — [`examples/run/post-with-image.js`](../examples/run/post-with-image.js).
 
 ## Почему веб-тест, а не скриншоты толстого клиента
 
