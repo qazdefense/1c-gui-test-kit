@@ -1,0 +1,4 @@
+interface:
+  display_name: "1C Client Test"
+  short_description: "Runtime-проверка толстого и тонкого клиента 1С"
+  default_prompt: "Запусти обычный клиент 1С, выполни runtime-сценарий и сохрани диагностику."

@@ -1,0 +1,9 @@
+# профили баз содержат пароли - в репозитории только примеры
+bases/*.psd1
+!bases/example-*.psd1
+
+# артефакты прогонов: снимки экрана с данными баз
+artifacts/
+
+node_modules/
+skills/web-test/error-shot.png
